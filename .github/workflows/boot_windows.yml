@@ -1,0 +1,27 @@
+on:
+  schedule:
+    - cron: '0 6 * * *'
+  workflow_dispatch:
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  boot-aarch64-windows-validation-os:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+      - run: git fetch -a origin --unshallow || true
+      - run: git config user.name "GitHub Actions Bot"
+      - run: git config user.email "<bot@github.com>"
+      - run: git remote add upstream -f https://gitlab.com/qemu-project/qemu
+      - run: git rebase upstream/master
+      - run: >
+          podman run --init --rm -it -v $(pwd):$(pwd) -w $(pwd)
+          docker.io/pbolinaro/qemu-ci:debian
+          bash -cx './configure --target-list=aarch64-softmmu && ninja -C build'
+      - run: >
+          podman run --init --rm -i -v $(pwd):$(pwd) -w $(pwd)
+          docker.io/pbolinaro/qemu-ci:debian
+          ./build/pyvenv/bin/meson test -C build --setup thorough func-aarch64-aarch64_virt_windows -t 5 --print-errorlog
