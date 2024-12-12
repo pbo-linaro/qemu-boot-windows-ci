@@ -25,3 +25,13 @@ jobs:
           podman run --init --rm -i -v $(pwd):$(pwd) -w $(pwd)
           docker.io/pbolinaro/qemu-ci:debian
           ./build/pyvenv/bin/meson test -C build --setup thorough func-aarch64-aarch64_virt_windows -t 5 --print-errorlog
+
+  keepalive-job:
+    name: Keepalive Workflow
+    if: ${{ always() }}
+    runs-on: ubuntu-latest
+    permissions:
+      actions: write
+    steps:
+      # https://github.com/marketplace/actions/workflow-keepalive
+      - uses: liskin/gh-workflow-keepalive@v1
